@@ -1,12 +1,37 @@
 # FabricChange
 
-**Offline maintenance impact analysis for GPU-cluster operators. Experimental pre-alpha; synthetic validation only.**
+**Maintenance impact analysis for AI and high-performance computing (HPC) clusters.**
 
-A storage restart can interrupt jobs on compute nodes in another rack, even when no compute node is a maintenance target. FabricChange combines a declared resource dependency graph with active Slurm allocations to explain that impact before a change review.
+## Why this exists
 
-FabricChange is a Go library and CLI. It evaluates simultaneous targets within a wave, accounts for existing failures, models k-of-n redundancy, and reports affected resources, job owners, causal paths, and compute-capacity policy violations. It never executes maintenance, drains nodes, submits jobs, or connects to a cluster. An optional, separately invoked Bash script captures read-only Slurm allocation data.
+Teams running model training and scientific simulations need to maintain the infrastructure those jobs depend on. Checking only the servers being restarted can miss the effect on other workloads: compute nodes in several racks may share storage, network equipment, or power.
 
-## Try the synthetic demo
+For example, two racks use a shared storage service with two redundant paths. One path is already down. Restarting the remaining path can interrupt jobs in both racks, even though no compute server is being restarted. The useful question before maintenance is: **which jobs could lose a required resource, who owns them, and why?**
+
+FabricChange is intended for cluster operators reviewing maintenance windows, infrastructure engineers checking redundancy before a change, and service engineers explaining a proposed change to a customer. It makes that review reproducible from recorded inputs. Customer usefulness and live-cluster behavior still need validation.
+
+## What FabricChange does
+
+FabricChange is an experimental Go library and command-line tool in the **infrastructure operations and change-impact analysis** category. You supply a snapshot of resources, their dependencies and health, active job allocations, and the resources you propose taking offline. It evaluates that proposal and returns:
+
+- Affected jobs and their owners, including jobs on servers outside the maintenance target list.
+- The dependency paths explaining the impact, with existing failures and redundant resources taken into account.
+- Remaining compute capacity against any limits you specified.
+- A `pass`, `blocked`, or `unknown` result, with assumptions and missing information visible.
+
+The report supports a human change review. A `pass` means no modeled blocker was found under the declared checks; it does not establish that a production change is safe.
+
+### Where it fits
+
+[Slurm](https://slurm.schedmd.com/overview.html) is a workload scheduler: it allocates compute resources to jobs. NVIDIA tools such as [Topograph](https://github.com/NVIDIA/topograph) provide topology information, while [Mission Control](https://docs.nvidia.com/mission-control/index.html) supports infrastructure operations. FabricChange fits into the review step alongside these tools, using a customer-supplied dependency model and allocation snapshot to explain the impact of a proposed change. Native Topograph and Mission Control imports are not implemented.
+
+Evaluation runs offline. A separately invoked, read-only script can capture Slurm allocations for import; **that adapter has only been tested with fixtures, not a live Slurm installation**. FabricChange does not execute maintenance or change cluster state.
+
+## How to try it
+
+The workflow is: **describe the dependencies → add the current jobs and health → evaluate a proposed change → review the explanation**. Start with the included examples to see the output before preparing your own snapshot. All example data is synthetic; no cluster access is needed.
+
+### Build from source and review the shared-storage example
 
 Requires Go 1.25 or later. No dependencies beyond the Go standard library.
 
@@ -17,9 +42,11 @@ bin/fabricchange plan -input examples/shared-storage-blocked.json \
   -at 2026-10-04T12:01:00Z -format text
 ```
 
-Expected exit **1, blocked**: `storage-b` is already down; restarting `storage-a` removes the remaining storage dependency for `gpu01` in `rack-a` and `gpu02` in `rack-b`. Running job `101` and suspended job `102` are affected. Output includes owners and paths such as `gpu02 → storage-a`, plus the existing `storage-b` failure. No compute node was directly targeted.
+Expected exit **1, blocked**: `storage-b` is already down; restarting `storage-a` removes the remaining storage dependency for `gpu01` in `rack-a` and `gpu02` in `rack-b`. Running job `101` and suspended job `102` are affected. Output includes owners and paths such as `gpu02 → storage-a`, plus the existing `storage-b` failure. No compute node was directly targeted. Exit 1 is the intended result of finding this modeled blocker, not a failed installation.
 
-Compare the other fixtures at the same explicit time:
+### Compare healthy redundancy with missing information
+
+Run the other examples at the same explicit time:
 
 ```bash
 bin/fabricchange plan -input examples/redundant-pass.json -at 2026-10-04T12:01:00Z
@@ -31,7 +58,7 @@ The first returns **0, pass** because the declared second storage path remains a
 
 All examples are invented. The `-at` flag makes demonstrations reproducible; real assessment should use current time (the default). Replaying an old fixture without `-at` produces a stale-snapshot finding. Build the binary to observe its exact exit code; `go run` adds its own process wrapper.
 
-## Release archives
+### Use a prebuilt release instead
 
 The [GitHub releases](https://github.com/spfuzzylink/fabricchange/releases) provide experimental binaries for Linux and macOS on amd64 and arm64, with SHA-256 checksums. Archives include the executable, license, documentation and synthetic examples. After extracting an archive, run:
 
