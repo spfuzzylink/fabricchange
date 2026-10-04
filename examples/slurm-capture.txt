@@ -1,0 +1,4 @@
+# started_at=2026-10-04T12:00:00Z
+101|training-team|RUNNING|gpu01,gpu02
+102|research-team|SUSPENDED|gpu02
+# finished_at=2026-10-04T12:00:02Z

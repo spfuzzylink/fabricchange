@@ -1,0 +1,125 @@
+{
+  "schema_version": "1",
+  "snapshot": {
+    "captured_at": "2026-10-04T12:00:00Z",
+    "complete": true,
+    "resources": [
+      {
+        "id": "storage-a",
+        "kind": "storage",
+        "status": "up"
+      },
+      {
+        "id": "storage-b",
+        "kind": "storage",
+        "status": "down"
+      },
+      {
+        "id": "fabric-a",
+        "kind": "fabric",
+        "status": "up"
+      },
+      {
+        "id": "fabric-b",
+        "kind": "fabric",
+        "status": "up"
+      },
+      {
+        "id": "gpu01",
+        "kind": "compute",
+        "status": "up",
+        "failure_domains": [
+          "rack-a"
+        ],
+        "dependencies": [
+          {
+            "id": "storage-paths",
+            "members": [
+              "storage-a",
+              "storage-b"
+            ],
+            "min_available": 1
+          },
+          {
+            "id": "fabric-paths",
+            "members": [
+              "fabric-a",
+              "fabric-b"
+            ],
+            "min_available": 1
+          }
+        ]
+      },
+      {
+        "id": "gpu02",
+        "kind": "compute",
+        "status": "up",
+        "failure_domains": [
+          "rack-b"
+        ],
+        "dependencies": [
+          {
+            "id": "storage-paths",
+            "members": [
+              "storage-a",
+              "storage-b"
+            ],
+            "min_available": 1
+          },
+          {
+            "id": "fabric-paths",
+            "members": [
+              "fabric-a",
+              "fabric-b"
+            ],
+            "min_available": 1
+          }
+        ]
+      }
+    ],
+    "jobs": [
+      {
+        "id": "101",
+        "owner": "training-team",
+        "status": "running",
+        "resources": [
+          "gpu01",
+          "gpu02"
+        ]
+      },
+      {
+        "id": "102",
+        "owner": "research-team",
+        "status": "suspended",
+        "resources": [
+          "gpu02"
+        ]
+      }
+    ]
+  },
+  "change": {
+    "prior_wave_restored": true,
+    "waves": [
+      {
+        "id": "restart-storage-a",
+        "targets": [
+          "storage-a"
+        ]
+      }
+    ]
+  },
+  "policy": {
+    "max_snapshot_age_seconds": 300,
+    "max_unavailable_compute_nodes": 1,
+    "min_healthy_by_domain": [
+      {
+        "domain": "rack-a",
+        "min_healthy_nodes": 1
+      },
+      {
+        "domain": "rack-b",
+        "min_healthy_nodes": 1
+      }
+    ]
+  }
+}
