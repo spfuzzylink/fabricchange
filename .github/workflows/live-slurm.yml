@@ -1,0 +1,39 @@
+name: Live Slurm lab
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - '.github/workflows/live-slurm.yml'
+      - 'scripts/capture-slurm.sh'
+      - 'scripts/slurm-lab.sh'
+      - '**.go'
+      - 'go.mod'
+permissions:
+  contents: read
+jobs:
+  cpu-slurm:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+          cache: false
+      - name: Install Ubuntu Slurm without starting package services
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RUNNER_ENVIRONMENT" == github-hosted ]]
+          if sudo test -e /usr/sbin/policy-rc.d; then
+            echo 'Refusing to replace an existing service-start policy.' >&2
+            exit 1
+          fi
+          trap 'sudo rm -f /usr/sbin/policy-rc.d' EXIT
+          printf '#!/bin/sh\nexit 101\n' | sudo tee /usr/sbin/policy-rc.d >/dev/null
+          sudo chmod 755 /usr/sbin/policy-rc.d
+          sudo apt-get update -q
+          sudo env DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends munge slurmctld slurmd slurm-client
+      - name: Validate real allocation capture and import
+        shell: bash
+        run: timeout --signal=TERM --kill-after=75s 360s bash scripts/slurm-lab.sh --disposable-github-runner

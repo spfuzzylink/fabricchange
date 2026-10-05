@@ -26,7 +26,7 @@ func ParseSlurmCapture(r io.Reader) (AllocationCapture, error) {
 	c := AllocationCapture{SchemaVersion: SchemaVersion, Source: "squeue-expanded-v1", Jobs: []Job{}, Limitations: []string{
 		"Allocation capture only: add independently verified resource health, dependencies, failure domains, and a completeness assessment before planning.",
 		"squeue visibility depends on cluster permissions; capture is not atomic and reservations, job steps, and pending scheduling are omitted.",
-		"Adapter tested against fixtures; live Slurm validation is pending.",
+		"Validation is limited to documented scenarios and versions; verify capture visibility and behavior on the target cluster.",
 	}}
 	limited := &io.LimitedReader{R: r, N: MaxInputBytes + 1}
 	scanner := bufio.NewScanner(limited)

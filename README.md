@@ -25,7 +25,7 @@ The report supports a human change review. A `pass` means no modeled blocker was
 
 [Slurm](https://slurm.schedmd.com/overview.html) is a workload scheduler: it allocates compute resources to jobs. NVIDIA tools such as [Topograph](https://github.com/NVIDIA/topograph) provide topology information, while [Mission Control](https://docs.nvidia.com/mission-control/index.html) supports infrastructure operations. FabricChange fits into the review step alongside these tools, using a customer-supplied dependency model and allocation snapshot to explain the impact of a proposed change. Native Topograph and Mission Control imports are not implemented.
 
-Evaluation runs offline. A separately invoked, read-only script can capture Slurm allocations for import; **that adapter has only been tested with fixtures, not a live Slurm installation**. FabricChange does not execute maintenance or change cluster state.
+Evaluation runs offline. A separately invoked, read-only script can capture Slurm allocations for import. **The adapter has passed a real, single-node CPU Slurm 23.11.4 lab; multi-node and production validation remain pending.** FabricChange does not execute maintenance or change cluster state.
 
 ## How to try it
 
@@ -90,7 +90,7 @@ Optional policy controls are `max_unavailable_compute_nodes` and `min_healthy_by
 
 ### Slurm adapter status
 
-The capture script and parser are implemented and fixture-tested; **live Slurm validation is pending**. Run the script only on an appropriate Slurm client host, then import its result offline:
+The capture script and parser have fixture tests and a [verified single-node CPU Slurm 23.11.4 run](docs/slurm-lab.md). That run covers one running array task, pending-task exclusion, and an empty capture after cancellation. Run the read-only script on an appropriate Slurm client host, then import its result offline:
 
 ```bash
 bash scripts/capture-slurm.sh > allocations.txt
@@ -100,6 +100,8 @@ bin/fabricchange import-slurm -input allocations.txt > allocations.json
 The script uses documented `squeue` fields `%i`, `%u`, `%T`, `%N` with running, suspended, and completing jobs, then uses `scontrol show hostnames` to expand hostlists. It publishes stdout only after every query succeeds. The parser rejects partial captures, duplicate jobs, unsupported states, and unexpanded hostlists. [Slurm squeue documentation](https://slurm.schedmd.com/squeue.html), [scontrol documentation](https://slurm.schedmd.com/scontrol.html).
 
 Copy imported `jobs` into a verified snapshot; supply health, dependencies, domains, and completeness separately. Use a capture time conservative for all included sources. Permission-filtered visibility and non-atomic queries can miss changes. In a completing job, Slurm `%N` contains the nodes still held by the allocation. Federation, reservations, job-step topology, pending placement, and checkpointability are not captured or modeled. Do not infer future job completion from this tool.
+
+A separate [CPU-only live Slurm lab](docs/slurm-lab.md) reproduces that integration check on disposable Ubuntu 24.04 GitHub-hosted runners. Unlike the read-only capture script, the lab creates and cancels test jobs and manages its own daemons; it must never run on a cluster or production client host.
 
 ## What is validated
 
@@ -115,6 +117,6 @@ Tests cover shared storage across racks, redundant paths and existing failures, 
 
 This is a working offline prototype, not a differentiated production platform. Graph propagation and redundancy analysis are established techniques. The proposed product value is making a customer-specific maintenance review reproducible across resource and scheduler boundaries; customer usefulness remains unvalidated.
 
-No real GPU hardware, live Slurm installation, operator deployment, or production maintenance event has validated this release. Reservations, checkpoints, scheduler policies, bandwidth/latency, degraded storage performance, change duration, and recovery are unmodeled. A declared k-of-n relationship is not proof that paths are operationally independent. The next milestones are operator-reviewed topology/allocations, a replay against a real maintenance plan, then a published comparison of decisions and operator effort with and without this tool.
+The live scheduler evidence is limited to the [single-node CPU lab](docs/slurm-lab.md). No GPU hardware, multi-node cluster, operator deployment, or production maintenance event has validated this tool. Reservations, checkpoints, scheduler policies, bandwidth/latency, degraded storage performance, change duration, and recovery are unmodeled. A declared k-of-n relationship is not proof that paths are operationally independent. The next milestones are operator-reviewed topology/allocations, a replay against a real maintenance plan, then a published comparison of decisions and operator effort with and without this tool.
 
 FabricChange is independent and is not affiliated with or endorsed by NVIDIA or SchedMD.

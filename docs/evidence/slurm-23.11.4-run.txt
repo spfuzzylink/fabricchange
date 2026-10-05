@@ -1,0 +1,84 @@
+Preserved stdout excerpt from the first verified CPU-only Slurm lab.
+Run: https://github.com/spfuzzylink/fabricchange/actions/runs/37263057800
+Run date: 2026-10-05 UTC (2026-10-04 America/Los_Angeles).
+Outer GitHub log timestamps removed; capture timestamps and values unchanged.
+Historical limitation text is preserved exactly as emitted before verification.
+This is real scheduler integration evidence, not GPU or production validation.
+
+Lab commit: 0252f8362221a9a28a8de69a2a67a1ed3acdc84f
+Run: https://github.com/spfuzzylink/fabricchange/actions/runs/37263057800
+munge 0.5.15-4ubuntu0.1
+slurm-client 23.11.4-1.2ubuntu5
+slurmctld 23.11.4-1.2ubuntu5
+slurmd 23.11.4-1.2ubuntu5
+=== RUN   TestLiveSlurmLab
+=== RUN   TestLiveSlurmLab/running
+=== RUN   TestLiveSlurmLab/empty
+--- PASS: TestLiveSlurmLab (0.00s)
+    --- PASS: TestLiveSlurmLab/running (0.00s)
+    --- PASS: TestLiveSlurmLab/empty (0.00s)
+PASS
+ok  	github.com/spfuzzylink/fabricchange	0.004s
+
+node.txt
+NodeName=runnervm8df0l Arch=x86_64 CoresPerSocket=2  CPUAlloc=0 CPUEfctv=4 CPUTot=4 CPULoad=0.13 AvailableFeatures=(null) ActiveFeatures=(null) Gres=(null) NodeAddr=127.0.0.1 NodeHostName=runnervm8df0l Version=23.11.4 OS=Linux 6.17.0-1022-azure #22-Ubuntu SMP Mon Jul 27 17:24:03 UTC 2026  RealMemory=512 AllocMem=0 FreeMem=11589 Sockets=1 Boards=1 State=IDLE ThreadsPerCore=2 TmpDisk=0 Weight=1 Owner=N/A MCS_label=N/A Partitions=lab  BootTime=2026-10-05T04:19:46 SlurmdStartTime=2026-10-05T04:20:38 LastBusyTime=2026-10-05T04:20:38 ResumeAfterTime=None CfgTRES=cpu=4,mem=512M,billing=4 AllocTRES= CapWatts=n/a CurrentWatts=0 AveWatts=0 ExtSensorsJoules=n/a ExtSensorsWatts=0 ExtSensorsTemp=n/a
+
+queue.txt
+1_1|PENDING
+1_0|RUNNING
+
+expected.txt
+1_0
+1_1
+runner
+runnervm8df0l
+
+running.txt
+# started_at=2026-10-05T04:21:09Z
+1_0|runner|RUNNING|runnervm8df0l
+# finished_at=2026-10-05T04:21:09Z
+
+running.json
+{
+  "schema_version": "1",
+  "source": "squeue-expanded-v1",
+  "started_at": "2026-10-05T04:21:09Z",
+  "finished_at": "2026-10-05T04:21:09Z",
+  "complete": false,
+  "jobs": [
+    {
+      "id": "1_0",
+      "owner": "runner",
+      "status": "running",
+      "resources": [
+        "runnervm8df0l"
+      ]
+    }
+  ],
+  "limitations": [
+    "Allocation capture only: add independently verified resource health, dependencies, failure domains, and a completeness assessment before planning.",
+    "squeue visibility depends on cluster permissions; capture is not atomic and reservations, job steps, and pending scheduling are omitted.",
+    "Adapter tested against fixtures; live Slurm validation is pending."
+  ]
+}
+
+empty.txt
+# started_at=2026-10-05T04:21:10Z
+# finished_at=2026-10-05T04:21:10Z
+
+empty.json
+{
+  "schema_version": "1",
+  "source": "squeue-expanded-v1",
+  "started_at": "2026-10-05T04:21:10Z",
+  "finished_at": "2026-10-05T04:21:10Z",
+  "complete": false,
+  "jobs": [],
+  "limitations": [
+    "Allocation capture only: add independently verified resource health, dependencies, failure domains, and a completeness assessment before planning.",
+    "squeue visibility depends on cluster permissions; capture is not atomic and reservations, job steps, and pending scheduling are omitted.",
+    "Adapter tested against fixtures; live Slurm validation is pending."
+  ]
+}
+
+PASS: CPU-only Slurm capture/import, cancellation, and owned service cleanup verified.
