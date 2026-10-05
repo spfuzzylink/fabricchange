@@ -101,6 +101,8 @@ The script uses documented `squeue` fields `%i`, `%u`, `%T`, `%N` with running, 
 
 Copy imported `jobs` into a verified snapshot; supply health, dependencies, domains, and completeness separately. Use a capture time conservative for all included sources. Permission-filtered visibility and non-atomic queries can miss changes. In a completing job, Slurm `%N` contains the nodes still held by the allocation. Federation, reservations, job-step topology, pending placement, and checkpointability are not captured or modeled. Do not infer future job completion from this tool.
 
+A separate [CPU-only live Slurm lab](docs/slurm-lab.md) is now implemented for disposable Ubuntu 24.04 GitHub-hosted runners. It starts real Slurm daemons and checks running array-task capture, pending-task exclusion, importer metadata, and cancellation. **The new lab has not yet completed a verified CI run.** Unlike the read-only capture script, this lab creates and cancels test jobs and manages its own daemons; it must never run on a cluster or production client host.
+
 ## What is validated
 
 ```bash
